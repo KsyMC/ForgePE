@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Minecraft - ForgePE</string>
+    <string name="app_name_short">ForgePE</string>
+    <string name="xperiaplayoptimized_content">true</string>
+    <string name="mcpenotfound">Can not find the MCPE.</string>
+    <string name="installmcpe">Minecraft : PocketEdition</string>
+    <string name="initialize_mod">Initializing …… [%1$s] %2$s</string>
+    <string name="please_wait">Please wait …</string>
+
+</resources>

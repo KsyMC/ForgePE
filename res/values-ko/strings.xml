@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="mcpenotfound">MCPE를 찾을 수 없습니다.</string>
+    <string name="initialize_mod">모드 초기화 …… [%1$s] %2$s</string>
+    <string name="please_wait">잠시만 기다려주세요 …</string>
+
+</resources>

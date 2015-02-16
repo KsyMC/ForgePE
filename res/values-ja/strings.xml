@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="mcpenotfound">MCPEを見つけることができませんでした。</string>
+    <string name="please_wait">しばらくお待ちください</string>
+
+</resources>
