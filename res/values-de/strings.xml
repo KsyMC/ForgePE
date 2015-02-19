@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="mcpenotfound">Kann nicht MCPE finden. ForgePE braucht Minecraft: PE zu realisieren.</string>
+    <string name="mcpenotfound">Kann nicht MCPE finden. ForgePE braucht Minecraft: PE zu wirken.</string>
     <string name="initialize_mod">Initialisieren …… [%1$s] %2$s</string>
     <string name="please_wait">Bitte warten …</string>
 
