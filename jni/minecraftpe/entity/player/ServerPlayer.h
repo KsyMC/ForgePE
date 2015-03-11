@@ -9,7 +9,7 @@ class ServerPlayer : public Player, public IContainerListener {
 public:
 	// Size : 3416
 	//void **vtable;		// 3396
-	Minecraft *_minecarft;	// 3400
+	Minecraft *_minecraft;  //I thinks that you meant _minecraft not _minecarft! :P	// 3400  
 
 public:
 	ServerPlayer(Minecraft *, Level &);
