@@ -4,7 +4,7 @@
     <string name="app_name">Minecraft - ForgePE</string>
     <string name="app_name_short">ForgePE</string>
     <string name="xperiaplayoptimized_content">true</string>
-    <string name="mcpenotfound">Can't find MCPE. ForgePE requires Minecraft: PE to work.</string>
+    <string name="mcpenotfound">Can\'t find MCPE. ForgePE requires Minecraft: PE to work.</string>
     <string name="installmcpe">Minecraft : PocketEdition</string>
     <string name="initialize_mod">Initializing …… [%1$s] %2$s</string>
     <string name="please_wait">Please wait …</string>
