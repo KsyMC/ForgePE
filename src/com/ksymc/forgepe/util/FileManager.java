@@ -11,7 +11,7 @@ import java.util.Arrays;
 
 public final class FileManager {
 	private FileManager() {
-		throw new AssertionError():
+		throw new AssertionError();
 	}
 
 	public static void copy(InputStream is, File outFile, boolean append) throws IOException {
