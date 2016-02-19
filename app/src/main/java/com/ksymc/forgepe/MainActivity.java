@@ -83,7 +83,11 @@ public class MainActivity extends Activity {
     }
 
     private void loadFiles() {
+        if (!ModManager.FORGE_DIR.exists())
+            ModManager.FORGE_DIR.mkdir();
         File forgeModsDir = new File(ModManager.FORGE_DIR, ModManager.MODS_DIR);
+        if (!forgeModsDir.exists())
+            forgeModsDir.mkdir();
         File[] zipFiles = forgeModsDir.listFiles(new FilenameFilter() {
 
             @Override
