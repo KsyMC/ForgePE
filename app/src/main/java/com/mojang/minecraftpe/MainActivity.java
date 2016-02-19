@@ -27,6 +27,7 @@ import android.app.NativeActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
@@ -113,7 +114,7 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
     protected void onResume() {
         super.onResume();
 
-        if(this.mHiddenTextInputDialog != null) {
+        if (this.mHiddenTextInputDialog != null) {
             String oldText = this.textInputWidget.getText().toString();
             int maxNumCharacters = this.textInputWidget.allowedLength;
             boolean limitInput = this.textInputWidget.limitInput;
@@ -141,18 +142,28 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
     @Override
     protected void onDestroy() {
         mInstance = null;
-        System.out.println("onDestory");
 
+        System.out.println("onDestory");
         FMOD.close();
+
+        for (ActivityListener listener : mActivityListeners)
+            listener.onDestroy();
+
         nativeUnregisterThis();
         super.onDestroy();
         System.exit(0);
     }
 
     @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        this.platform.onViewFocusChanged(hasFocus);
+    }
+
+    @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if(event.getKeyCode() != KeyEvent.KEYCODE_BACK || event.getAction() != KeyEvent.ACTION_UP) {
-            if(event.getCharacters() != null) {
+        if (event.getKeyCode() != KeyEvent.KEYCODE_BACK || event.getAction() != KeyEvent.ACTION_UP) {
+            if (event.getCharacters() != null) {
                 this.nativeTypeCharacter(event.getCharacters());
             }
             return super.dispatchKeyEvent(event);
@@ -162,14 +173,68 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
-        if(keyCode == KeyEvent.KEYCODE_BACK) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
             onBackPressed();
 
             return true;
-        } else if(keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+        } else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
             this.platform.onVolumePressed();
         }
         return super.onKeyUp(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
+        return super.onKeyMultiple(keyCode, repeatCount, event);
+    }
+
+    @Override
+    public boolean onKey(View v, int keyCode, KeyEvent event) {
+        return false;
+    }
+
+    @Override
+    public void onBackPressed() {
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        for (ActivityListener listener : mActivityListeners)
+            listener.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == RESULT_PICK_IMAGE) {
+            if (resultCode != RESULT_OK || data == null) {
+                if (this.mCallback == 0L)
+                    return;
+
+                nativeOnPickImageCanceled(this.mCallback);
+                this.mCallback = 0L;
+                return;
+            }
+
+            Uri selectedImageUrl = data.getData();
+
+            String[] filePathColumn = new String[]{"_data"};
+            Cursor cursor = getContentResolver().query(selectedImageUrl, filePathColumn, null, null, null);
+            cursor.moveToFirst();
+
+            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+            String picturePath = cursor.getString(columnIndex);
+
+            nativeOnPickImageSuccess(this.mCallback, picturePath);
+            this.mCallback = 0L;
+
+            cursor.close();
+        }
+
+        nativeOnPickImageCanceled(this.mCallback);
+        this.mCallback = 0L;
     }
 
     public void setupKeyboardViews(String text, int maxLength, boolean limitInput, boolean numbersOnly) {
@@ -190,10 +255,10 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
                 Log.w("mcpe - keyboard", "onEditorAction: " + actionId);
 
                 boolean handled = false;
-                if(actionId == EditorInfo.IME_ACTION_NEXT) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
                     MainActivity.this.nativeReturnKeyPressed();
                     handled = true;
-                } else if(actionId == EditorInfo.IME_ACTION_PREVIOUS) {
+                } else if (actionId == EditorInfo.IME_ACTION_PREVIOUS) {
                     MainActivity.this.nativeBackPressed();
                     handled = true;
                 }
@@ -209,10 +274,12 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
             }
 
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
 
         });
         this.textInputWidget.setOnMCPEKeyWatcher(new TextInputProxyEditTextbox.MCPEKeyWatcher() {
@@ -328,7 +395,7 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
 
             @Override
             public void run() {
-                if(MainActivity.this.mHiddenTextInputDialog != null) {
+                if (MainActivity.this.mHiddenTextInputDialog != null) {
                     MainActivity.this.mHiddenTextInputDialog.dismiss();
                     MainActivity.this.mHiddenTextInputDialog = null;
                 }
@@ -353,22 +420,13 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
         this.mActivityListeners.add(listener);
     }
 
+    public void removeListener(ActivityListener listener) {
+        mActivityListeners.remove(listener);
+    }
+
     public float getKeyboardHeight() {
         return this.virtualKeyboardHeight;
     }
-
-    @Override
-    public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
-        return super.onKeyMultiple(keyCode, repeatCount, event);
-    }
-
-    @Override
-    public boolean onKey(View v, int keyCode, KeyEvent event) {
-        return false;
-    }
-
-    @Override
-    public void onBackPressed() {}
 
     public void pickImage(long callback) {
         this.mCallback = callback;
@@ -384,54 +442,49 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
 
     }
 
+    public void displayDialog(int dialogId) {
+    }
+
+    private void onDialogCanceled() {
+        this._userInputStatus = 0;
+    }
+
+    private void onDialogCompleted() {
+        int size = this._userInputValues.size();
+        this._userInputText = new String[size];
+
+        for (int i = 0; i < size; i++) {
+            this._userInputText[i] = this._userInputValues.get(i).getStringValue();
+        }
+        for (String s : _userInputText) {
+            System.out.println("js: " + s);
+        }
+
+        this._userInputStatus = 1;
+        InputMethodManager InputManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        InputManager.showSoftInput(getCurrentFocus(), InputMethodManager.SHOW_IMPLICIT);
+    }
+
     public void setIsPowerVR(boolean status) {
         MainActivity._isPowerVr = status;
     }
 
     public static boolean isPowerVR() {
-        return _isPowerVr;
-    }
-
-    public boolean supportsNonTouchscreen() {
-        return isXperiaPlay();
-    }
-
-    public static boolean isXperiaPlay() {
-        String[] tags = {Build.MODEL, Build.DEVICE, Build.PRODUCT};
-
-        for(String tag : tags) {
-            tag.toLowerCase(Locale.ENGLISH);
-
-            if(tag.indexOf("r800") >= 0 || tag.indexOf("so-01d") >= 0 || (tag.indexOf("xperia") >= 0 && tag.indexOf("play") >= 0)) {
-                return true;
-            }
-        }
-        return false;
+        return MainActivity._isPowerVr;
     }
 
     public void launchUri(String uri) {
         startActivity(new Intent("android.intent.action.VIEW", Uri.parse(uri)));
     }
 
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        this.platform.onViewFocusChanged(hasFocus);
-    }
-
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        return super.onKeyDown(keyCode, event);
-    }
-
     public int getKeyFromKeyCode(int keyCode, int metaState, int deviceId) {
-        if(deviceId < 0) {
+        if (deviceId < 0) {
             int[] ids = InputDevice.getDeviceIds();
-            if(ids.length != 0) {
+            if (ids.length != 0) {
                 deviceId = ids[deviceId];
 
                 InputDevice device = InputDevice.getDevice(deviceId);
-                if(device != null) {
+                if (device != null) {
                     return device.getKeyCharacterMap().get(keyCode, metaState);
                 }
             }
@@ -448,57 +501,70 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
 
             fos.flush();
             fos.close();
-        } catch(FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             System.err.println("Couldn\'t create file: " + filename);
             e.printStackTrace();
-        } catch(IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public byte[] getFileDataBytes(String filename) {
-        AssetManager assets = getAssets();
+        if (filename.isEmpty())
+            return null;
 
         try {
+            AssetManager assets = getAssets();
             InputStream is = assets.open(filename);
             BufferedInputStream bis = new BufferedInputStream(is);
-            ByteArrayOutputStream s = new ByteArrayOutputStream(4096);
 
-            byte[] tmp = new byte[1024];
+            int buffer = 1048576;
+            ByteArrayOutputStream s = new ByteArrayOutputStream(buffer);
+
+            byte[] tmp = new byte[buffer];
 
             int count;
-            while((count = bis.read(tmp)) != -1) {
+            while ((count = bis.read(tmp)) != -1)
                 s.write(tmp, 0, count);
-            }
             bis.close();
 
             return s.toByteArray();
-        } catch(IOException e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            System.err.println("Cannot read from file " + filename);
+            return null;
         }
-        return null;
     }
 
     public int[] getImageData(String filename, boolean inTextureFolder) {
-        AssetManager assets = getAssets();
-        InputStream inputSream;
+        Bitmap bm;
 
-        try {
-            inputSream = assets.open(filename);
-            Bitmap bm = BitmapFactory.decodeStream(inputSream);
-            int w = bm.getWidth();
-            int h = bm.getHeight();
-
-            int[] pixels = new int[(w * h) + 2];
-            pixels[0] = w;
-            pixels[1] = h;
-            bm.getPixels(pixels, 2, w, 0, 0, w, h);
-
-            return pixels;
-        } catch(IOException e) {
-            System.err.println("getImageData: Could not open image " + filename);
+        if (inTextureFolder) {
+            AssetManager assets = getAssets();
+            InputStream inputStream;
+            try {
+                inputStream = assets.open(filename);
+            } catch (IOException e) {
+                System.err.println("getImageData: Could not open image " + filename);
+                return null;
+            }
+            bm = BitmapFactory.decodeStream(inputStream);
+        } else {
+            bm = BitmapFactory.decodeFile(filename);
+            if (bm == null) {
+                System.err.println("getImageData: Could not open image " + filename);
+                return null;
+            }
         }
-        return null;
+
+        int w = bm.getWidth();
+        int h = bm.getHeight();
+
+        int[] pixels = new int[(w * h) + 2];
+        pixels[0] = w;
+        pixels[1] = h;
+        bm.getPixels(pixels, 2, w, 0, 0, w, h);
+
+        return pixels;
     }
 
     public String getDeviceId() {
@@ -526,7 +592,6 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
         Display display = ((WindowManager) getSystemService(WINDOW_SERVICE)).getDefaultDisplay();
         int out = Math.max(display.getWidth(), display.getHeight());
         System.out.println("getwidth: " + out);
-
         return out;
     }
 
@@ -534,7 +599,6 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
         Display display = ((WindowManager) getSystemService(WINDOW_SERVICE)).getDefaultDisplay();
         int out = Math.min(display.getWidth(), display.getHeight());
         System.out.println("getheight: " + out);
-
         return out;
     }
 
@@ -564,16 +628,7 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
         return true;
     }
 
-    public void postScreenshotToFacebook(String filename, int w, int h, int[] pixels) {}
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-
-
-        nativeOnPickImageCanceled(this.mCallback);
-        this.mCallback = 0L;
+    public void postScreenshotToFacebook(String filename, int w, int h, int[] pixels) {
     }
 
     public void quit() {
@@ -586,14 +641,14 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
         });
     }
 
-    public void displayDialog(int dialogId) {}
+    public void tick() {
+    }
 
-    public void tick() {}
-
-    public void buyGame() {}
+    public void buyGame() {
+    }
 
     public String getPlatformStringVar(int id) {
-        if(id == 0)
+        if (id == 0)
             return Build.MODEL;
         return null;
     }
@@ -601,17 +656,11 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
     public boolean isNetworkEnabled(boolean onlyWifiAllowed) {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         NetworkInfo info;
-
-        if(onlyWifiAllowed) {
+        if (onlyWifiAllowed)
             info = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-        } else {
+        else
             info = cm.getActiveNetworkInfo();
-        }
-
-        if(info != null && info.isConnected()) {
-            return true;
-        }
-        return false;
+        return info != null && info.isConnected();
     }
 
     boolean isTablet() {
@@ -624,12 +673,10 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
         String lastAndroidVersion = prefs.getString("lastAndroidVersion", "");
 
         boolean firstHardwareStart = true;
-
         if (!lastAndroidVersion.isEmpty()) {
             if (lastAndroidVersion.equals(Build.VERSION.RELEASE))
                 firstHardwareStart = false;
         }
-
         if (firstHardwareStart) {
             SharedPreferences.Editor edit = prefs.edit();
             edit.putString("lastAndroidVersion", Build.VERSION.RELEASE);
@@ -674,51 +721,47 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
 
     public String getAccessToken() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-
         return prefs.getString("accessToken", "");
     }
 
     public String getClientId() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-
         return prefs.getString("clientId", "");
     }
 
     public String getProfileId() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-
         return prefs.getString("profileId", "");
     }
 
     public String getProfileName() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-
         return prefs.getString("profileName", "");
     }
 
-    public void statsTrackEvent(String eventName, String eventParameters) {}
-    public void statsUpdateUserData(String graphicsVendor, String graphicsRenderer) {}
+    public void statsTrackEvent(String eventName, String eventParameters) {
+    }
+
+    public void statsUpdateUserData(String graphicsVendor, String graphicsRenderer) {
+    }
 
     public String[] getBroadcastAddresses() {
-        ArrayList<String> list = new ArrayList<String>();
-
+        ArrayList<String> list = new ArrayList<>();
         try {
             System.setProperty("java.net.preferIPv4Stack", "true");
             Enumeration<NetworkInterface> niEnum = NetworkInterface.getNetworkInterfaces();
 
-            while(niEnum.hasMoreElements()) {
-                NetworkInterface ni = (NetworkInterface) niEnum.nextElement();
+            while (niEnum.hasMoreElements()) {
+                NetworkInterface ni = niEnum.nextElement();
 
-                if(!ni.isLoopback()) {
-                    for(InterfaceAddress interfaceAddress : ni.getInterfaceAddresses()) {
-                        if(interfaceAddress.getBroadcast() != null) {
+                if (!ni.isLoopback()) {
+                    for (InterfaceAddress interfaceAddress : ni.getInterfaceAddresses()) {
+                        if (interfaceAddress.getBroadcast() != null)
                             list.add(interfaceAddress.getBroadcast().toString().substring(1));
-                        }
                     }
                 }
             }
-        } catch(Exception e) {
-
+        } catch (Exception ignored) {
         }
         return list.toArray(new String[list.size()]);
     }
@@ -741,32 +784,12 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
         v.vibrate(milliSeconds);
     }
 
-    private void onDialogCanceled() {
-        this._userInputStatus = 0;
-    }
-
     public long getTotalMemory() {
         ActivityManager activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
         activityManager.getMemoryInfo(memoryInfo);
 
         return memoryInfo.availMem;
-    }
-
-    private void onDialogCompleted() {
-        int size = this._userInputValues.size();
-        this._userInputText = new String[size];
-
-        for(int i = 0; i < size; i++) {
-            this._userInputText[i] = this._userInputValues.get(i).getStringValue();
-        }
-        for(String s : _userInputText) {
-            System.out.println("js: " + s);
-        }
-
-        this._userInputStatus = 1;
-        InputMethodManager InputManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-        InputManager.showSoftInput(getCurrentFocus(), InputMethodManager.SHOW_IMPLICIT);
     }
 
     public boolean isDemo() {
@@ -778,14 +801,24 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener {
     }
 
     native void nativeBackPressed();
+
     native void nativeBackSpacePressed();
+
     native void nativeRegisterThis();
+
     native void nativeReturnKeyPressed();
+
     native void nativeSetTextboxText(String textboxText);
+
     native void nativeStopThis();
+
     native void nativeSuspend();
+
     native void nativeTypeCharacter(String character);
+
     native void nativeUnregisterThis();
+
     native void nativeOnPickImageCanceled(long callback);
+
     native void nativeOnPickImageSuccess(long callback, String data);
 }

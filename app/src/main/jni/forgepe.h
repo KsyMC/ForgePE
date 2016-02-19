@@ -1,10 +1,12 @@
-typedef struct ModInfo {
+typedef struct ModInfo
+{
 	string modid;
 	string name;
 	string version;
 } MODINFO;
 
-class ForgePE {
+class ForgePE
+{
 private:
 	map<string, Mod *> _mods;
 

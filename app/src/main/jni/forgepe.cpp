@@ -5,30 +5,33 @@
 
 #include "log.h"
 #include "header.h"
-//#include "substrate.h"
+#include "substrate.h"
 
 //#include "minecraftpe/client/MinecraftClient.h"
 
 using std::string;
 using std::map;
 
-/*#include "Mod.h"
+#include "Mod.h"
 #include "forgepe.h"
 
 ForgePE _forgePE;
 
-ForgePE::ForgePE() {
+ForgePE::ForgePE()
+{
 	// TODD
 }
 
-void ForgePE::setupHooks() {
+void ForgePE::setupHooks()
+{
 	void *handle = dlopen("libminecraftpe.so", RTLD_LAZY);
 
 	//MSHookFunction((void *) &MinecraftClient::init, (void *) &MinecraftClient::initHooks, (void **) &MinecraftClient::init_real);
-}*/
+}
 
 JNIEXPORT void JNICALL Java_com_ksymc_forgepe_ModManager_nativeLoadMod
-  (JNIEnv *env, jclass modManager, jstring jmodid, jstring jname, jstring jversion) {
+  (JNIEnv *env, jclass modManager, jstring jmodid, jstring jname, jstring jversion)
+{
 	const char *modid = env->GetStringUTFChars(jmodid, NULL);
 	const char *name = env->GetStringUTFChars(jname, NULL);
 	const char *version = env->GetStringUTFChars(jversion, NULL);
@@ -41,12 +44,12 @@ JNIEXPORT void JNICALL Java_com_ksymc_forgepe_ModManager_nativeLoadMod
 }
 
 JNIEXPORT void JNICALL Java_com_ksymc_forgepe_ModManager_nativeInitialization
-  (JNIEnv *env, jclass modManager) {
+  (JNIEnv *env, jclass modManager)
+{
 	// TODO
 }
 
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
-	//_forgePE = ForgePE();
-
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
+{
 	return JNI_VERSION_1_2;
 }

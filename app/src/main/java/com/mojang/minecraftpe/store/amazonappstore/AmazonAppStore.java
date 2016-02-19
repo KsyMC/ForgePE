@@ -6,19 +6,20 @@ import com.mojang.minecraftpe.store.Store;
 import com.mojang.minecraftpe.store.StoreListener;
 
 public class AmazonAppStore implements Store {
+    private StoreListener mListener;
 
     public AmazonAppStore(Context context, StoreListener listener) {
-
+        this.mListener = listener;
+        this.mListener.onStoreInitialized(true);
     }
 
     @Override
     public void destructor() {
-
     }
 
     @Override
     public String getStoreId() {
-        return null;
+        return "android.amazonappstore";
     }
 
     @Override
