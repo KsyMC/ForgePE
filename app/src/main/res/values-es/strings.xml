@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="mcpenotfound">No se pudo encontrar Minecraft: PE. ForgePE requiere Minecraft: PE para funcionar.</string>
+    <string name="installmcpe">Minecraft: Pocket Edition</string>
+    <string name="initialize_mod">Iniciando... [%1$s] %2$s</string>
+    <string name="please_wait">Por favor espera...</string>
+
+</resources>
