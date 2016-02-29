@@ -135,7 +135,7 @@ public class MainActivity extends Activity {
             String name = null;
             String version = null;
 
-            JSONArray infoArray = (JSONArray) new JSONParser().parse(new FileReader(new File(tempModDir, "mcpemod.info")));
+            JSONArray infoArray = (JSONArray) new JSONParser().parse(new FileReader(new File(tempModDir, "mcmod.info")));
             for (int i = 0; i < infoArray.size(); i++) {
                 JSONObject info = (JSONObject) infoArray.get(i);
                 modID = (String) info.get("modid");
