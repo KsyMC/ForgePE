@@ -170,7 +170,7 @@ public class MainActivity extends Activity {
             fos.write(md5);
             fos.close();
 
-            System.load(modDir.getAbsolutePath() + "/libs/lib" + modID + ".so");
+            System.load(modDir.getAbsolutePath() + "/libs/" +System.mapLibraryName(modID));
             ModManager.nativeLoadMod(modID, name, version);
         } catch (ParseException | IOException e) {
             e.printStackTrace();

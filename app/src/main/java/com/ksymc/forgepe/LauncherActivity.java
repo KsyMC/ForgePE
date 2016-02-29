@@ -13,7 +13,7 @@ public class LauncherActivity extends com.mojang.minecraftpe.MainActivity {
 		Bundle data = getIntent().getExtras();
 		customLibraryDir = data.getString("custom_library_dir");
 
-		System.load(customLibraryDir + "/libminecraftpe.so");
+		System.load(customLibraryDir + "/" + System.mapLibraryName("minecraftpe"));
 		
 		fakePackage = true;
 		super.onCreate(savedInstanceState);
