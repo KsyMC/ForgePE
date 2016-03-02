@@ -1,5 +1,6 @@
 package com.ksymc.forgepe.util;
 
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -15,13 +16,19 @@ public final class FileManager {
     }
 
     public static void copy(InputStream is, File outFile, boolean append) throws IOException {
+        DataInputStream dis = new DataInputStream(is);
+
+        byte allower = dis.readByte();
+        byte[] tmp = new byte[dis.available() + 1];
+
+        tmp[0] = allower;
+        dis.readFully(tmp, 1, dis.available());
+
+        //dis.close();
+
         FileOutputStream fos = new FileOutputStream(outFile, append);
 
-        byte[] tmp = new byte[1024];
-
-        int count;
-        while ((count = is.read(tmp)) != -1)
-            fos.write(tmp, 0, count);
+        fos.write(tmp);
 
         fos.close();
     }
