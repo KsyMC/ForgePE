@@ -23,12 +23,13 @@ public final class FileManager {
         while ((count = is.read(tmp)) != -1)
             fos.write(tmp, 0, count);
 
-        is.close();
         fos.close();
     }
 
     public static void copy(File inFile, File outFile, boolean append) throws IOException {
-        copy(new FileInputStream(inFile), outFile, append);
+        FileInputStream fis = new FileInputStream(inFile);
+        copy(fis, outFile, append);
+        fis.close();
     }
 
     public static void copyDirectory(File inDir, File outDir, boolean append) throws IOException {
